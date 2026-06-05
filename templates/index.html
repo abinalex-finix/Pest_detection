@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriLens AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-leaf"></i>
+                <h1>AgriLens</h1>
+            </div>
+            <p class="subtitle">AI Agricultural Assistant</p>
+        </header>
+
+        <main>
+            <div class="mode-selector">
+                <input type="radio" id="mode-pest" name="mode" value="pest" checked>
+                <label for="mode-pest"><i class="fa-solid fa-bug"></i> Pest ID</label>
+
+                <input type="radio" id="mode-coconut" name="mode" value="coconut">
+                <label for="mode-coconut"><i class="fa-solid fa-tree"></i> Coconut Count</label>
+            </div>
+
+            <div class="action-buttons-group">
+                <button id="open-camera-btn" class="secondary-btn">
+                    <i class="fa-solid fa-video"></i> Live Camera
+                </button>
+                
+                <input type="file" id="image-upload" accept="image/*" hidden>
+                <label for="image-upload" class="secondary-btn upload-label-btn">
+                    <i class="fa-solid fa-folder-open"></i> Upload File
+                </label>
+            </div>
+
+            <!-- Live Camera Section -->
+            <div id="camera-container" class="hidden">
+                <video id="camera-video" autoplay playsinline></video>
+                <button id="capture-btn" class="upload-btn capture-shutter">
+                    <i class="fa-solid fa-camera"></i> Capture Photo
+                </button>
+            </div>
+            <canvas id="canvas" hidden></canvas>
+
+            <!-- Preview Section -->
+            <div class="preview-container hidden" id="preview-container">
+                <img id="image-preview" src="" alt="Preview">
+                <div class="preview-actions">
+                    <button id="retake-btn" class="secondary-btn"><i class="fa-solid fa-rotate-left"></i> Retake</button>
+                    <button id="analyze-btn" class="action-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Image</button>
+                </div>
+            </div>
+
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p>Analyzing image with Google AI...</p>
+            </div>
+
+            <div id="result-container" class="hidden">
+                <h3>Analysis Result</h3>
+                <div id="result-text"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by Google Gemini Vision AI</p>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
