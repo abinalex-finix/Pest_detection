@@ -10,6 +10,20 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fa-solid fa-key"></i> Setup Required</h2>
+            <p>To use AgriLens permanently on your phone, you need a free Google Gemini API Key.</p>
+            <ol style="text-align: left; margin: 12px 0 12px 24px; font-size: 0.9rem;">
+                <li>Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.</li>
+                <li>Paste it below. It will be securely saved <strong>only on your phone</strong>.</li>
+            </ol>
+            <input type="password" id="api-key-input" placeholder="Paste your GEMINI_API_KEY here...">
+            <button id="save-key-btn" class="upload-btn" style="width: 100%; justify-content: center; padding: 12px; margin-top: 12px;">Save Securely</button>
+        </div>
+    </div>
+
     <div class="app-container">
         <header>
             <div class="logo">
