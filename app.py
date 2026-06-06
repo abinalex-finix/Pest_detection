@@ -5,6 +5,9 @@ import urllib.request
 import threading
 import time
 import re
+import json
+import urllib.request
+import urllib.parse
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -20,6 +23,21 @@ if api_key and api_key != "your_actual_api_key_here":
 
 def get_gemini_model():
     return genai.GenerativeModel('gemini-1.5-pro')
+
+def fetch_wikipedia_image(query):
+    if not query or query.lower() in ['unknown', 'none']: return None
+    try:
+        url = f"https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles={urllib.parse.quote(query)}"
+        req = urllib.request.Request(url, headers={'User-Agent': 'AgriLens/1.0'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            pages = data.get("query", {}).get("pages", {})
+            for page_id, page_info in pages.items():
+                if "original" in page_info:
+                    return page_info["original"]["source"]
+    except Exception as e:
+        print(f"Wiki image error for {query}: {e}")
+    return None
 
 @app.route('/')
 def index():
@@ -48,22 +66,64 @@ def analyze():
             prompt = (
                 "You are an expert agricultural botanist and plant pathologist. "
                 "Analyze the provided image of a plant/tree. Identify any pests, insects, or diseases visible. "
-                "1. Identify the affected plant/tree if possible. "
-                "2. Identify the pest or disease. "
-                "3. Provide actionable, clear solutions to treat the issue (pesticide recommendations, organic solutions, or agricultural practices). "
-                "Format the response in clear Markdown with headings."
+                "You MUST return the output strictly as a valid JSON object with the following keys: "
+                "\"plant_name\" (Name of the plant/tree), "
+                "\"pest_name\" (Name of the pest/disease), "
+                "\"solution_keywords\" (1-2 words summarizing the best treatment, e.g. 'Neem Oil' or 'Pruning'), "
+                "\"detailed_analysis\" (Detailed markdown string with solution headings). "
+                "If you cannot identify them, use \"Unknown\" for the names."
             )
         elif mode == 'coconut':
             prompt = (
                 "You are an expert agricultural AI. "
                 "Analyze the provided image of a coconut tree. Count the number of coconuts visible in the image. "
-                "Provide a clear, simple answer stating the estimated total count. If none are visible, say so."
+                "You MUST return the output strictly as a valid JSON object with the following keys: "
+                "\"plant_name\" (value should be \"Coconut Tree\"), "
+                "\"pest_name\" (value should be \"None\"), "
+                "\"solution_keywords\" (value should be \"None\"), "
+                "\"detailed_analysis\" (Detailed text stating the total count)."
             )
         else:
             return jsonify({'error': 'Invalid mode selected.'}), 400
 
         response = model.generate_content([prompt, image_part])
-        return jsonify({'result': response.text})
+        
+        # Clean markdown codeblocks from JSON response
+        raw_json = response.text.strip()
+        if raw_json.startswith("```json"):
+            raw_json = raw_json[7:]
+        elif raw_json.startswith("```"):
+            raw_json = raw_json[3:]
+        if raw_json.endswith("```"):
+            raw_json = raw_json[:-3]
+            
+        data = json.loads(raw_json.strip())
+
+        # Image fetching logic using Wikipedia API
+        result_data = {
+            'detailed_analysis': data.get('detailed_analysis', 'Analysis failed.')
+        }
+
+        if mode == 'pest':
+            # Fetch Plant Image
+            plant_q = data.get('plant_name', '')
+            plant_img = fetch_wikipedia_image(plant_q)
+            if plant_img: result_data['plant_img'] = plant_img
+            result_data['plant_name'] = plant_q
+
+            # Fetch Pest Image
+            pest_q = data.get('pest_name', '')
+            pest_img = fetch_wikipedia_image(pest_q)
+            if pest_img: result_data['pest_img'] = pest_img
+            result_data['pest_name'] = pest_q
+
+            # Fetch Solution Image
+            sol_q = data.get('solution_keywords', '')
+            sol_img = fetch_wikipedia_image(sol_q)
+            if sol_img: result_data['solution_img'] = sol_img
+            result_data['solution_name'] = sol_q
+
+        return jsonify({'result': result_data})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

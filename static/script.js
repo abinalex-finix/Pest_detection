@@ -109,7 +109,32 @@ document.addEventListener('DOMContentLoaded', () => {
             resultContainer.classList.remove('hidden');
 
             if (response.ok) {
-                resultText.innerHTML = marked.parse(data.result);
+                // If it's a string, just parse it. If it's an object, parse the detailed_analysis.
+                const analysisText = typeof data.result === 'string' ? data.result : (data.result.detailed_analysis || 'Analysis failed.');
+                resultText.innerHTML = marked.parse(analysisText);
+                
+                const gallery = document.getElementById('reference-gallery');
+                gallery.innerHTML = '';
+                
+                if (typeof data.result === 'object' && (data.result.plant_img || data.result.pest_img || data.result.solution_img)) {
+                    gallery.classList.remove('hidden');
+                    
+                    if (data.result.plant_img) {
+                        gallery.innerHTML += `<div class="ref-card"><img src="${data.result.plant_img}" alt="Plant">
+                                              <div class="ref-card-info"><strong>Affected Plant</strong>${data.result.plant_name}</div></div>`;
+                    }
+                    if (data.result.pest_img) {
+                        gallery.innerHTML += `<div class="ref-card"><img src="${data.result.pest_img}" alt="Pest">
+                                              <div class="ref-card-info"><strong>Identified Issue</strong>${data.result.pest_name}</div></div>`;
+                    }
+                    if (data.result.solution_img) {
+                        gallery.innerHTML += `<div class="ref-card"><img src="${data.result.solution_img}" alt="Solution">
+                                              <div class="ref-card-info"><strong>Treatment</strong>${data.result.solution_name}</div></div>`;
+                    }
+                } else {
+                    gallery.classList.add('hidden');
+                }
+                
             } else {
                 resultText.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
             }
